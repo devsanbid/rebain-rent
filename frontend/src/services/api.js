@@ -222,9 +222,9 @@ export const savedPropertiesAPI = {
 
   // Save property
   saveProperty: async (propertyId, notes = '') => {
-    return makeRequest('/saved-properties', {
+    return makeRequest(`/saved-properties/${propertyId}`, {
       method: 'POST',
-      body: JSON.stringify({ propertyId, notes }),
+      body: JSON.stringify({ notes }),
     });
   },
 

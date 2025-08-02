@@ -11,6 +11,7 @@ import {
 import { authenticate } from '../middleware/auth.js';
 import {
   validateId,
+  validatePropertyId,
   validatePagination
 } from '../middleware/validation.js';
 import { body } from 'express-validator';
@@ -30,12 +31,12 @@ const generalLimiter = rateLimit({
 
 router.get('/', generalLimiter, authenticate, validatePagination, getSavedProperties);
 router.get('/count', generalLimiter, authenticate, getSavedPropertiesCount);
-router.get('/check/:propertyId', generalLimiter, authenticate, validateId, checkIfPropertySaved);
+router.get('/check/:propertyId', generalLimiter, authenticate, validatePropertyId, checkIfPropertySaved);
 
 router.post('/:propertyId',
   generalLimiter,
   authenticate,
-  validateId,
+  validatePropertyId,
   [
     body('notes')
       .optional()
@@ -48,14 +49,14 @@ router.post('/:propertyId',
 router.delete('/:propertyId',
   generalLimiter,
   authenticate,
-  validateId,
+  validatePropertyId,
   unsaveProperty
 );
 
 router.put('/:propertyId/notes',
   generalLimiter,
   authenticate,
-  validateId,
+  validatePropertyId,
   [
     body('notes')
       .isString()
