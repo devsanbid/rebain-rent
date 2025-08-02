@@ -11,10 +11,11 @@ import {
   Phone,
   Mail,
   User,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from 'lucide-react';
-import { IMAGE_BASE_URL, commentsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { IMAGE_BASE_URL, commentsAPI } from '../../services/api';
 
 const PropertyDetails = ({ 
   property, 
@@ -33,7 +34,35 @@ const PropertyDetails = ({
     comment: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
   const textareaRef = useRef(null);
+
+  const handleDeleteComment = async (commentId) => {
+    if (!user) {
+      alert('Please login to delete comments');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      setDeletingCommentId(commentId);
+      const response = await commentsAPI.deleteComment(commentId);
+      
+      if (response.success) {
+        await fetchComments();
+      } else {
+        alert('Failed to delete comment');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('Failed to delete comment');
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
 
   const handleCommentChange = useCallback((e) => {
     const target = e.target;
@@ -378,11 +407,27 @@ const PropertyDetails = ({
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold text-slate-900">
-                            {comment.user ? `${comment.user.firstName} ${comment.user.lastName}` : 'Anonymous'}
+                            {comment.user ? comment.user.name : 'Anonymous'}
                           </h4>
-                          <span className="text-sm text-gray-500">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm text-gray-500">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                            </span>
+                            {user && comment.user && user.id === comment.user.id && (
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                disabled={deletingCommentId === comment.id}
+                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete comment"
+                              >
+                                {deletingCommentId === comment.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-gray-700 leading-relaxed">{comment.comment}</p>
                       </div>
