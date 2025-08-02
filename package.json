@@ -1,0 +1,25 @@
+{
+  "name": "rent-rabin",
+  "version": "1.0.0",
+  "description": "Property rental platform with React frontend and Node.js backend",
+  "scripts": {
+    "dev": "echo 'Please run backend and frontend separately:' && echo 'Backend: cd backend && bun run dev' && echo 'Frontend: cd frontend && bun run dev'",
+    "install:all": "cd backend && bun install && cd ../frontend && bun install",
+    "build": "cd frontend && bun run build",
+    "start:backend": "cd backend && bun run start",
+    "start:frontend": "cd frontend && bun run preview"
+  },
+  "keywords": [
+    "rental",
+    "property",
+    "react",
+    "nodejs",
+    "express",
+    "postgresql"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
