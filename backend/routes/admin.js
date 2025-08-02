@@ -19,44 +19,21 @@ import { body } from 'express-validator';
 
 const router = express.Router();
 
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-const adminLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: {
-    success: false,
-    message: 'Too many admin requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
 
 router.use(authenticate);
 router.use(authorize('admin'));
 
-router.get('/dashboard', adminLimiter, getDashboardStats);
-router.get('/system-health', adminLimiter, getSystemHealth);
-router.get('/users', adminLimiter, validatePagination, getAllUsers);
-router.get('/users/:id', adminLimiter, validateId, getUserById);
+router.get('/dashboard', getDashboardStats);
+router.get('/system-health', getSystemHealth);
+router.get('/users', validatePagination, getAllUsers);
+router.get('/users/:id', validateId, getUserById);
 
 router.post('/create-admin',
-  adminLimiter,
   validateRegister,
   createAdmin
 );
 
 router.put('/users/:id/status',
-  adminLimiter,
   validateId,
   [
     body('status')
@@ -76,7 +53,6 @@ router.put('/users/:id/status',
 );
 
 router.delete('/users/:id',
-  adminLimiter,
   validateId,
   deleteUser
 );

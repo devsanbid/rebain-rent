@@ -182,8 +182,8 @@ export const propertiesAPI = {
 // Bookings API calls
 export const bookingsAPI = {
   // Get user bookings
-  getUserBookings: async () => {
-    return makeRequest('/bookings/user');
+  getUserBookings: async (queryParams = '') => {
+    return makeRequest(`/bookings/my-bookings${queryParams}`);
   },
 
   // Get single booking
@@ -200,9 +200,10 @@ export const bookingsAPI = {
   },
 
   // Cancel booking
-  cancelBooking: async (id) => {
+  cancelBooking: async (id, cancellationReason = '') => {
     return makeRequest(`/bookings/${id}/cancel`, {
       method: 'PUT',
+      body: JSON.stringify({ cancellationReason }),
     });
   },
 };
@@ -276,16 +277,21 @@ export const adminAPI = {
   },
 
   // Get all bookings
-  getAllBookings: async () => {
-    return makeRequest('/admin/bookings');
+  getAllBookings: async (queryParams = '') => {
+    return makeRequest(`/bookings${queryParams}`);
   },
 
   // Update booking status
-  updateBookingStatus: async (id, status) => {
-    return makeRequest(`/admin/bookings/${id}/status`, {
+  updateBookingStatus: async (id, status, adminNotes = '') => {
+    return makeRequest(`/bookings/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, adminNotes }),
     });
+  },
+
+  // Get booking stats
+  getBookingStats: async () => {
+    return makeRequest('/bookings/stats');
   },
 
   // Update user status
@@ -293,6 +299,13 @@ export const adminAPI = {
     return makeRequest(`/admin/users/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    });
+  },
+
+  // Delete user
+  deleteUser: async (id) => {
+    return makeRequest(`/admin/users/${id}`, {
+      method: 'DELETE',
     });
   },
 };

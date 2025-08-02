@@ -264,14 +264,23 @@ export const deleteUser = async (req, res) => {
 
 export const getDashboardStats = async (req, res) => {
   try {
+    console.log('Fetching dashboard stats...');
     const totalUsers = await User.count({ where: { role: 'user' } });
+    console.log('Total users:', totalUsers);
     const activeUsers = await User.count({ where: { role: 'user', status: 'active' } });
+    console.log('Active users:', activeUsers);
     const totalProperties = await Property.count();
+    console.log('Total properties:', totalProperties);
     const activeProperties = await Property.count({ where: { isAvailable: true } });
+    console.log('Active properties:', activeProperties);
     const totalBookings = await Booking.count();
+    console.log('Total bookings:', totalBookings);
     const pendingBookings = await Booking.count({ where: { status: 'pending' } });
+    console.log('Pending bookings:', pendingBookings);
     const totalReviews = await Review.count();
+    console.log('Total reviews:', totalReviews);
     const pendingReviews = await Review.count({ where: { status: 'pending' } });
+    console.log('Pending reviews:', pendingReviews);
 
     const totalRevenue = await Booking.sum('totalAmount', {
       where: { status: { [Op.in]: ['confirmed', 'completed'] } }
@@ -359,6 +368,7 @@ export const getDashboardStats = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Dashboard stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching dashboard stats',

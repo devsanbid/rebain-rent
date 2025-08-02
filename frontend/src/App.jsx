@@ -19,6 +19,9 @@ import PropertiesDashboard from './Admin/Pages/PropertyManagement';
 import ViewDetails from './User/Components/viewdetails';
 import AdminViewDetails from './Admin/Components/AdminViewDetails';
 import UserViewDetails from './Admin/Components/UserViewDetails';
+import BookingPage from './User/Pages/BookingPage';
+import OrderHistory from './User/Pages/OrderHistory';
+import AdminOrders from './Admin/Pages/AdminOrders';
 
 function App() {
   return (
@@ -30,7 +33,7 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/browse" element={<BrowseProperties />} />
-          <Route path="/viewdetails" element={<ViewDetails />} />
+          <Route path="/viewdetails/:id" element={<ViewDetails />} />
           
           <Route path="/login" element={
             <PublicRoute>
@@ -63,6 +66,16 @@ function App() {
               <SignOut />
             </ProtectedRoute>
           } />
+          <Route path="/booking/:id" element={
+            <ProtectedRoute>
+              <BookingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <OrderHistory />
+            </ProtectedRoute>
+          } />
           
           <Route path="/admin/dashboard" element={
             <ProtectedRoute adminOnly={true}>
@@ -87,6 +100,11 @@ function App() {
           <Route path="/admin/viewuserdetails" element={
             <ProtectedRoute adminOnly={true}>
               <UserViewDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminOrders />
             </ProtectedRoute>
           } />
         </Routes>

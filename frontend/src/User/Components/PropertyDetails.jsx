@@ -21,7 +21,8 @@ const PropertyDetails = ({
   onClose, 
   bookmarkedProperties, 
   toggleBookmark,
-  isFullPage = false 
+  isFullPage = false,
+  onBooking
 }) => {
   const [reviews, setReviews] = useState([
     {
@@ -247,11 +248,12 @@ const PropertyDetails = ({
                 <p className="text-gray-600">Monthly rental rate</p>
               </div>
 
-              {/* Contact Host Button */}
+              {/* Booking Button */}
               <button 
-                className="w-full font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg border-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+                onClick={onBooking}
+                className="w-full font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg bg-amber-600 text-white hover:bg-amber-700"
               >
-                Contact the Host to Book the Property
+                Book This Property
               </button>
             </div>
           </div>

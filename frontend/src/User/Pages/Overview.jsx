@@ -84,16 +84,11 @@ const Overview = () => {
 
   const toggleBookmark = handleBookmark;
 
-  // STATIC ROUTING: Navigate to /viewdetails (no dynamic ID)
+  // DYNAMIC ROUTING: Navigate to /viewdetails/:id
   const handleViewDetails = (property) => {
     console.log('Navigating to details for:', property);
-    // Navigate to STATIC route '/viewdetails' and pass property data via state
-    navigate('/viewdetails', { 
-      state: { 
-        property: property,
-        bookmarkedProperties: bookmarkedProperties 
-      } 
-    });
+    // Navigate to DYNAMIC route '/viewdetails/:id'
+    navigate(`/viewdetails/${property.id}`);
   };
 
   // Enhanced PropertyCardWithHover component

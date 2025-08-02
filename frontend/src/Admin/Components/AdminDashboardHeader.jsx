@@ -7,7 +7,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  ChevronDown
+  ChevronDown,
+  Calendar
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -133,6 +134,17 @@ const AdminHeader = ({ currentPage }) => {
               <Home className="w-4 h-4 mr-2" />
               Properties
             </Link>
+            <Link
+              to="/admin/orders"
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive('/admin/orders')
+                  ? 'bg-orange-100 text-orange-700' 
+                  : 'text-gray-600 hover:text-orange-600'
+              }`}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Orders
+            </Link>
           </nav>
 
           {/* Admin Profile with Hover Dropdown */}
@@ -229,6 +241,18 @@ const AdminHeader = ({ currentPage }) => {
               >
                 <Home className="w-4 h-4 mr-2" />
                 Properties
+              </Link>
+              <Link
+                to="/admin/orders"
+                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium ${
+                  isActive('/admin/orders')
+                    ? 'bg-orange-100 text-orange-700' 
+                    : 'text-gray-600'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Orders
               </Link>
               
               {/* Mobile Profile Options - Simplified */}

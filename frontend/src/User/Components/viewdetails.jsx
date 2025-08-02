@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { propertiesAPI } from '../../services/api';
 // Remove ArrowLeft import since we're not using the back button anymore
 import DashboardHeader from '../Components/DashboardHeader';
 import PropertyDetails from '../Components/PropertyDetails';
@@ -8,24 +9,35 @@ import Footer from '../Components/Footer';
 const ViewDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id } = useParams();
   const [bookmarkedProperties, setBookmarkedProperties] = useState([]);
   const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get property data from navigation state
   useEffect(() => {
-    console.log('ViewDetails mounted, location.state:', location.state);
-    
-    if (location.state && location.state.property) {
-      setProperty(location.state.property);
-      if (location.state.bookmarkedProperties) {
-        setBookmarkedProperties(location.state.bookmarkedProperties);
+    const fetchProperty = async () => {
+      try {
+        setLoading(true);
+        const response = await propertiesAPI.getProperty(id);
+        if (response.success) {
+          setProperty(response.data.property);
+        } else {
+          navigate('/overview');
+        }
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        navigate('/overview');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    if (id) {
+      fetchProperty();
     } else {
-      // If no property data, redirect back to overview
-      console.log('No property data found, redirecting to overview');
       navigate('/overview');
     }
-  }, [location.state, navigate]);
+  }, [id, navigate]);
 
   const toggleBookmark = (propertyId) => {
     setBookmarkedProperties(prev => {
@@ -42,7 +54,7 @@ const ViewDetails = () => {
   };
 
   // Loading state
-  if (!property) {
+  if (loading || !property) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -52,6 +64,10 @@ const ViewDetails = () => {
       </div>
     );
   }
+
+  const handleBooking = () => {
+    navigate(`/booking/${property.id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -79,6 +95,7 @@ const ViewDetails = () => {
           bookmarkedProperties={bookmarkedProperties}
           toggleBookmark={toggleBookmark}
           isFullPage={true} // Renders as full page, not modal
+          onBooking={handleBooking}
         />
       </div>
 

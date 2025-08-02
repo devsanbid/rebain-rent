@@ -19,41 +19,19 @@ import { uploadSingle, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
 
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-router.post('/register', authLimiter, validateRegister, register);
-router.post('/login', authLimiter, validateLogin, login);
-router.get('/verify', generalLimiter, authenticate, verifyToken);
-router.get('/profile', generalLimiter, authenticate, getProfile);
-router.put('/profile', generalLimiter, authenticate, updateProfile);
-router.put('/change-password', authLimiter, authenticate, [
+router.post('/register', validateRegister, register);
+router.post('/login', validateLogin, login);
+router.get('/verify', authenticate, verifyToken);
+router.get('/profile', authenticate, getProfile);
+router.put('/profile', authenticate, updateProfile);
+router.put('/change-password', authenticate, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long'),
   handleValidationErrors
 ], changePassword);
 
 router.post('/upload-avatar', 
-  generalLimiter,
   authenticate,
   uploadSingle('avatar'),
   handleUploadError,

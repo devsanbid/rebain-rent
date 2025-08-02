@@ -8,7 +8,8 @@ import {
   ChevronDown,
   Settings,
   LogOut,
-  Eye
+  Eye,
+  Calendar
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -135,6 +136,17 @@ const DashboardHeader = ({ currentPage, bookmarkedCount = 0 }) => {
               <Bookmark className="w-5 h-5 mr-2" />
               Saved ({bookmarkedCount})
             </Link>
+            <Link
+              to="/orders"
+              className={`flex items-center px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                isActive('/orders')
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' 
+                  : 'text-slate-700 hover:text-amber-700 hover:bg-amber-50'
+              }`}
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              My Orders
+            </Link>
           </nav>
           
           {/* User Profile with Hover Dropdown */}
@@ -234,6 +246,18 @@ const DashboardHeader = ({ currentPage, bookmarkedCount = 0 }) => {
               >
                 <Bookmark className="w-5 h-5 mr-3" />
                 Saved ({bookmarkedCount})
+              </Link>
+              <Link
+                to="/orders"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center px-4 py-3 rounded-xl text-base font-semibold transition-colors duration-200 ${
+                  isActive('/orders')
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white' 
+                    : 'text-slate-700 hover:text-amber-700 hover:bg-amber-50'
+                }`}
+              >
+                <Calendar className="w-5 h-5 mr-3" />
+                My Orders
               </Link>
               
               {/* Mobile Profile Options */}

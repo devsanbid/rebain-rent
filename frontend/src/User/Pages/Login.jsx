@@ -22,24 +22,11 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       const result = await login({ email: data.email, password: data.password });
-      
+
       if (result.success) {
-        // Store authentication token for logout functionality
-        const mockToken = 'demo_token_' + Date.now();
-        localStorage.setItem('token', mockToken);
-        
-        // Store user info
-        const mockUser = {
-          id: 1,
-          email: data.email,
-          name: 'User',
-          role: isAdmin() ? 'admin' : 'user'
-        };
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        
         if (isAdmin()) {
           navigate('/admin/dashboard');
         } else {
@@ -109,10 +96,9 @@ const Login = () => {
                     })}
                     className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl text-slate-900 placeholder-slate-400 
                       bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 
-                      transition-all duration-300 ${
-                        errors.email
-                          ? "border-red-400 focus:ring-red-400 focus:border-red-400"
-                          : "border-amber-200 hover:border-amber-300"
+                      transition-all duration-300 ${errors.email
+                        ? "border-red-400 focus:ring-red-400 focus:border-red-400"
+                        : "border-amber-200 hover:border-amber-300"
                       }`}
                   />
                 </div>
@@ -142,10 +128,9 @@ const Login = () => {
                     })}
                     className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl text-slate-900 placeholder-slate-400 
                       bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 
-                      transition-all duration-300 ${
-                        errors.password
-                          ? "border-red-400 focus:ring-red-400 focus:border-red-400"
-                          : "border-amber-200 hover:border-amber-300"
+                      transition-all duration-300 ${errors.password
+                        ? "border-red-400 focus:ring-red-400 focus:border-red-400"
+                        : "border-amber-200 hover:border-amber-300"
                       }`}
                   />
                   <button
@@ -175,8 +160,8 @@ const Login = () => {
                   />
                   <span className="text-sm text-slate-600">Remember me</span>
                 </label>
-                <Link 
-                  to="/forgot-password" 
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-amber-600 hover:text-amber-700 hover:underline transition-colors"
                 >
                   Forgot password?
@@ -188,31 +173,30 @@ const Login = () => {
                 type="submit"
                 disabled={isLoading}
                 className={`w-full font-semibold py-4 px-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 
-                  transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${
-                    isLoading 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-700 hover:to-amber-800 transform hover:scale-[1.02] hover:shadow-xl'
+                  transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-700 hover:to-amber-800 transform hover:scale-[1.02] hover:shadow-xl'
                   }`}
               >
                 {isLoading ? (
-                   <>
-                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                     Signing In...
-                   </>
-                 ) : (
-                   <>
-                     Sign In
-                     <ArrowRight size={20} />
-                   </>
-                 )}
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Signing In...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight size={20} />
+                  </>
+                )}
               </button>
             </form>
 
             {/* Sign Up Link */}
             <p className="mt-8 text-center text-slate-600">
               Don't have an account?{" "}
-              <Link 
-                to="/signup" 
+              <Link
+                to="/signup"
                 className="text-amber-600 hover:text-amber-700 font-semibold hover:underline transition-colors"
               >
                 Create one here
