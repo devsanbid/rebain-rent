@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, X, Home, Building, Bed, Users, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, Filter, MapPin, DollarSign, Home, Building, Users, Bed, Eye, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../Components/DashboardHeader';
 import PropertyCard from '../Components/PropertyCard';
 import Footer from '../Components/Footer';
-import { propertiesAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { propertiesAPI, savedPropertiesAPI } from '../../services/api';
 
 const BrowseProperties = () => {
-  const [bookmarkedProperties, setBookmarkedProperties] = useState([]);
+  const { user } = useAuth();
+  const [savedPropertyIds, setSavedPropertyIds] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
@@ -20,8 +22,8 @@ const BrowseProperties = () => {
 
   useEffect(() => {
     fetchProperties();
-    fetchSavedProperties();
-  }, []);
+    fetchSavedPropertyIds();
+  }, [user]);
 
   const fetchProperties = async () => {
     try {
@@ -42,15 +44,22 @@ const BrowseProperties = () => {
     }
   };
 
-  // Get saved property IDs from localStorage
-  const getSavedPropertyIds = () => {
-    const saved = localStorage.getItem('savedProperties');
-    return saved ? JSON.parse(saved) : [];
-  };
-
-  // Save property IDs to localStorage
-  const saveSavedPropertyIds = (ids) => {
-    localStorage.setItem('savedProperties', JSON.stringify(ids));
+  // Fetch saved property IDs from backend
+  const fetchSavedPropertyIds = async () => {
+    if (!user) {
+      setSavedPropertyIds([]);
+      return;
+    }
+    
+    try {
+      const response = await savedPropertiesAPI.getSavedProperties();
+      const savedProperties = response.data.savedProperties || [];
+      const ids = savedProperties.map(item => item.property.id);
+      setSavedPropertyIds(ids);
+    } catch (error) {
+      console.error('Error fetching saved properties:', error);
+      setSavedPropertyIds([]);
+    }
   };
 
   const fetchSavedProperties = () => {
@@ -84,7 +93,27 @@ const BrowseProperties = () => {
 
 
 
-  const toggleBookmark = handleBookmark;
+  const toggleBookmark = async (propertyId) => {
+    if (!user) {
+      alert('Please login to save properties');
+      return;
+    }
+    
+    try {
+      const isCurrentlySaved = savedPropertyIds.includes(propertyId);
+      
+      if (isCurrentlySaved) {
+        await savedPropertiesAPI.removeSavedProperty(propertyId);
+        setSavedPropertyIds(prev => prev.filter(id => id !== propertyId));
+      } else {
+        await savedPropertiesAPI.saveProperty(propertyId);
+        setSavedPropertyIds(prev => [...prev, propertyId]);
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      alert('Failed to update saved property. Please try again.');
+    }
+  };
 
   // DYNAMIC ROUTING: Navigate to /viewdetails/:id
   const handleViewDetails = (property) => {
@@ -121,7 +150,7 @@ const BrowseProperties = () => {
         <div className="relative">
           <PropertyCard 
             property={property} 
-            bookmarkedProperties={bookmarkedProperties}
+            bookmarkedProperties={savedPropertyIds}
             toggleBookmark={toggleBookmark}
             onViewDetails={() => handleViewDetails(property)} // Uses static routing
             className="group-hover:shadow-xl transition-all duration-300"
@@ -196,7 +225,7 @@ const BrowseProperties = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <DashboardHeader currentPage="browse" bookmarkedCount={bookmarkedProperties.length} />
+      <DashboardHeader currentPage="browse" bookmarkedCount={savedPropertyIds.length} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32">
         {/* Header */}

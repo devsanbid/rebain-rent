@@ -15,7 +15,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { IMAGE_BASE_URL, commentsAPI } from '../../services/api';
+import { IMAGE_BASE_URL, commentsAPI, savedPropertiesAPI } from '../../services/api';
 
 const PropertyDetails = ({ 
   property, 
@@ -35,7 +35,60 @@ const PropertyDetails = ({
   });
   const [submitting, setSubmitting] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [isPropertySaved, setIsPropertySaved] = useState(false);
+  const [savingProperty, setSavingProperty] = useState(false);
   const textareaRef = useRef(null);
+
+  // Check if property is saved
+  const checkIfPropertySaved = async () => {
+    if (!user || !property?.id) return;
+    
+    try {
+      const response = await savedPropertiesAPI.isPropertySaved(property.id);
+      if (response.success) {
+        setIsPropertySaved(response.data.isSaved);
+      }
+    } catch (error) {
+      console.error('Error checking if property is saved:', error);
+    }
+  };
+
+  // Handle saving/unsaving property
+  const handleToggleSaveProperty = async () => {
+    if (!user) {
+      alert('Please login to save properties');
+      return;
+    }
+
+    if (!property?.id) return;
+
+    try {
+      setSavingProperty(true);
+      
+      if (isPropertySaved) {
+        // Remove from saved properties
+        const response = await savedPropertiesAPI.removeSavedProperty(property.id);
+        if (response.success) {
+          setIsPropertySaved(false);
+        } else {
+          alert('Failed to remove property from saved list');
+        }
+      } else {
+        // Save property
+        const response = await savedPropertiesAPI.saveProperty(property.id);
+        if (response.success) {
+          setIsPropertySaved(true);
+        } else {
+          alert('Failed to save property');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling save property:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setSavingProperty(false);
+    }
+  };
 
   const handleDeleteComment = async (commentId) => {
     if (!user) {
@@ -83,8 +136,9 @@ const PropertyDetails = ({
   useEffect(() => {
     if (property?.id) {
       fetchComments();
+      checkIfPropertySaved();
     }
-  }, [property?.id]);
+  }, [property?.id, user]);
 
   const fetchComments = async () => {
     try {
@@ -217,10 +271,13 @@ const PropertyDetails = ({
               </div>
             </div>
             <button
-              onClick={() => toggleBookmark?.(propertyDetails.id)}
-              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+              onClick={handleToggleSaveProperty}
+              disabled={savingProperty}
+              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {bookmarkedProperties?.includes(propertyDetails.id) ? (
+              {savingProperty ? (
+                <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : isPropertySaved ? (
                 <Heart className="w-6 h-6 text-red-500 fill-current" />
               ) : (
                 <HeartOff className="w-6 h-6 text-gray-600" />

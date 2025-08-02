@@ -4,94 +4,95 @@ import { Link, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../Components/DashboardHeader';
 import PropertyCard from '../Components/PropertyCard';
 import Footer from '../Components/Footer';
-import { propertiesAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { savedPropertiesAPI } from '../../services/api';
 
 const SavedProperties = () => {
-  const [bookmarkedProperties, setBookmarkedProperties] = useState([]);
+  const { user } = useAuth();
+  const [savedProperties, setSavedProperties] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
-  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
-  // Get saved property IDs from localStorage
-  const getSavedPropertyIds = () => {
-    const saved = localStorage.getItem('savedProperties');
-    return saved ? JSON.parse(saved) : [];
-  };
-
-  // Save property IDs to localStorage
-  const saveSavedPropertyIds = (ids) => {
-    localStorage.setItem('savedProperties', JSON.stringify(ids));
-  };
-
-  // Fetch saved properties from localStorage and get property details
+  // Fetch saved properties from backend
   const fetchSavedProperties = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log('SavedProperties fetchSavedProperties called');
       setLoading(true);
-      const savedIds = getSavedPropertyIds();
-      console.log('SavedProperties retrieved savedIds from localStorage:', savedIds);
-      setBookmarkedProperties(savedIds);
-      console.log('SavedProperties set bookmarkedProperties to:', savedIds);
-      
-      if (savedIds.length > 0) {
-        // Fetch property details for saved IDs
-        const propertyPromises = savedIds.map(id => propertiesAPI.getProperty(id));
-        const propertyResponses = await Promise.all(propertyPromises);
-        const propertyDetails = propertyResponses
-          .filter(response => response.success)
-          .map(response => response.data);
-        setProperties(propertyDetails);
-      } else {
-        setProperties([]);
-      }
+      setError(null);
+      const response = await savedPropertiesAPI.getSavedProperties();
+      setSavedProperties(response.data.savedProperties || []);
     } catch (error) {
       console.error('Error fetching saved properties:', error);
-      setProperties([]);
-      setBookmarkedProperties([]);
+      setError(error.response?.data?.message || 'Failed to load saved properties');
     } finally {
       setLoading(false);
     }
   };
 
   // Handle removing a property from saved list
-  const handleRemoveBookmark = (propertyId) => {
-    console.log('SavedProperties handleRemoveBookmark called with propertyId:', propertyId);
-    console.log('SavedProperties current bookmarkedProperties:', bookmarkedProperties);
-    
-    const updatedIds = bookmarkedProperties.filter(id => id !== propertyId);
-    console.log('SavedProperties removing bookmark, updatedIds:', updatedIds);
-    
-    setBookmarkedProperties(updatedIds);
-    saveSavedPropertyIds(updatedIds);
-    setProperties(prev => prev.filter(property => property.id !== propertyId));
-    
-    // Verify localStorage was updated
-    const savedInStorage = localStorage.getItem('savedProperties');
-    console.log('SavedProperties saved to localStorage:', savedInStorage);
+  const handleRemoveBookmark = async (propertyId) => {
+    if (!user) {
+      alert('Please login to manage saved properties');
+      return;
+    }
+
+    try {
+      const response = await savedPropertiesAPI.removeSavedProperty(propertyId);
+      if (response.success) {
+        setSavedProperties(prev => prev.filter(item => item.property.id !== propertyId));
+      } else {
+        alert('Failed to remove property from saved list');
+      }
+    } catch (error) {
+      console.error('Error removing saved property:', error);
+      alert('An error occurred. Please try again.');
+    }
   };
 
   // Handle clearing all saved properties
-  const handleClearAll = () => {
-    setBookmarkedProperties([]);
-    saveSavedPropertyIds([]);
-    setProperties([]);
+  const handleClearAll = async () => {
+    if (!user) return;
+    
+    if (!window.confirm('Are you sure you want to remove all saved properties?')) {
+      return;
+    }
+
+    try {
+      // Remove each property individually
+      const removePromises = savedProperties.map(item => 
+        savedPropertiesAPI.removeSavedProperty(item.property.id)
+      );
+      
+      await Promise.all(removePromises);
+      setSavedProperties([]);
+    } catch (error) {
+      console.error('Error clearing saved properties:', error);
+      alert('An error occurred while clearing saved properties');
+    }
   };
 
   useEffect(() => {
     fetchSavedProperties();
-  }, []);
-
-
+  }, [user]);
 
   const toggleBookmark = handleRemoveBookmark;
 
-  // DYNAMIC ROUTING: Navigate to /viewdetails/:id
+  // STATIC ROUTING: Navigate to /viewdetails (no dynamic ID)
   const handleViewDetails = (property) => {
     console.log('Navigating to details for:', property);
-    // Navigate to DYNAMIC route '/viewdetails/:id'
-    navigate(`/viewdetails/${property.id}`);
+    // Navigate to STATIC route '/viewdetails' and pass property data via state
+    navigate('/viewdetails', { 
+      state: { 
+        property: property
+      } 
+    });
   };
 
   // Enhanced PropertyCardWithHover component - REMOVED X BUTTON
@@ -121,7 +122,7 @@ const SavedProperties = () => {
           <PropertyCard 
             property={property} 
             showBookmarkButton={true} // Keep heart button visible for unsaving
-            bookmarkedProperties={bookmarkedProperties}
+            bookmarkedProperties={savedProperties.map(item => item.property.id)}
             toggleBookmark={toggleBookmark} // This will handle unsaving when heart is clicked
             onViewDetails={() => handleViewDetails(property)} // Uses static routing
             className="group-hover:shadow-xl transition-all duration-300"
@@ -141,13 +142,38 @@ const SavedProperties = () => {
     );
   };
 
-  const bookmarkedPropertiesList = properties.filter(property =>
-    bookmarkedProperties.includes(property.id)
-  );
+  const bookmarkedPropertiesList = savedProperties.map(item => item.property);
+
+  // Show login message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <DashboardHeader currentPage="saved" bookmarkedCount={0} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32">
+          <div className="text-center py-24">
+            <div className="w-32 h-32 bg-gradient-to-r from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-8">
+              <Bookmark className="w-16 h-16 text-amber-600" />
+            </div>
+            <h3 className="text-3xl font-serif font-bold text-slate-900 mb-4">Please Login</h3>
+            <p className="text-xl text-slate-600 mb-10 max-w-md mx-auto">
+              You need to be logged in to view your saved properties.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-full hover:from-amber-700 hover:to-amber-800 transition-all duration-200 font-semibold text-lg shadow-lg"
+            >
+              Login
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <DashboardHeader currentPage="saved" bookmarkedCount={bookmarkedProperties.length} />
+      <DashboardHeader currentPage="saved" bookmarkedCount={savedProperties.length} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32">
         <div className="flex items-center justify-between mb-12">
@@ -156,7 +182,7 @@ const SavedProperties = () => {
               Your Saved Properties
             </h2>
             <p className="text-xl text-slate-600">
-              {bookmarkedPropertiesList.length} properties you've bookmarked
+              {savedProperties.length} properties you've bookmarked
             </p>
             {/* Added helper text */}
             <p className="text-sm text-gray-500 mt-2">
@@ -165,7 +191,7 @@ const SavedProperties = () => {
           </div>
           
           {/* Clear All Button */}
-          {bookmarkedPropertiesList.length > 0 && (
+          {savedProperties.length > 0 && (
             <button
               onClick={handleClearAll}
               className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-all duration-200"
@@ -176,7 +202,28 @@ const SavedProperties = () => {
           )}
         </div>
         
-        {bookmarkedPropertiesList.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-24">
+            <div className="w-16 h-16 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-xl text-slate-600">Loading your saved properties...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-24">
+            <div className="w-32 h-32 bg-gradient-to-r from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-8">
+              <X className="w-16 h-16 text-red-600" />
+            </div>
+            <h3 className="text-3xl font-serif font-bold text-slate-900 mb-4">Error Loading Properties</h3>
+            <p className="text-xl text-slate-600 mb-10 max-w-md mx-auto">
+              {error}
+            </p>
+            <button
+              onClick={fetchSavedProperties}
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-full hover:from-amber-700 hover:to-amber-800 transition-all duration-200 font-semibold text-lg shadow-lg"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : savedProperties.length === 0 ? (
           <div className="text-center py-24">
             <div className="w-32 h-32 bg-gradient-to-r from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-8">
               <Bookmark className="w-16 h-16 text-amber-600" />
@@ -195,10 +242,10 @@ const SavedProperties = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {bookmarkedPropertiesList.map(property => (
+            {savedProperties.map(item => (
               <PropertyCardWithHover
-                key={property.id}
-                property={property}
+                key={item.property.id}
+                property={item.property}
               />
             ))}
           </div>

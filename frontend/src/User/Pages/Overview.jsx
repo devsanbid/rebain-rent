@@ -4,14 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import DashboardHeader from '../Components/DashboardHeader';
 import PropertyCard from '../Components/PropertyCard';
 import Footer from '../Components/Footer';
-import { propertiesAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { propertiesAPI, savedPropertiesAPI } from '../../services/api';
 
 const Overview = () => {
-  const [bookmarkedProperties, setBookmarkedProperties] = useState([]);
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [properties, setProperties] = useState([]);
+  const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // Navigation hook for static routing
+  const [error, setError] = useState(null);
+  const [savedPropertyIds, setSavedPropertyIds] = useState([]);
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   // Fetch properties from backend
   const fetchProperties = async () => {
@@ -31,54 +35,61 @@ const Overview = () => {
     }
   };
 
-  // Get saved property IDs from localStorage
-  const getSavedPropertyIds = () => {
-    const saved = localStorage.getItem('savedProperties');
-    return saved ? JSON.parse(saved) : [];
+  // Fetch saved property IDs from backend
+  const fetchSavedPropertyIds = async () => {
+    if (!user) {
+      setSavedPropertyIds([]);
+      setSavedProperties([]);
+      return;
+    }
+    
+    try {
+       const response = await savedPropertiesAPI.getSavedProperties();
+       const savedProperties = response.data.savedProperties || [];
+       const ids = savedProperties.map(item => item.property.id);
+       const properties = savedProperties.map(item => item.property);
+       setSavedPropertyIds(ids);
+       setSavedProperties(properties);
+     } catch (error) {
+       console.error('Error fetching saved properties:', error);
+       setSavedPropertyIds([]);
+       setSavedProperties([]);
+     }
   };
 
-  // Save property IDs to localStorage
-  const saveSavedPropertyIds = (ids) => {
-    localStorage.setItem('savedProperties', JSON.stringify(ids));
-  };
-
-  // Fetch saved properties from localStorage
-  const fetchSavedProperties = () => {
+  // Fetch saved properties from backend
+  const fetchSavedProperties = async () => {
     console.log('Overview fetchSavedProperties called');
-    const savedIds = getSavedPropertyIds();
-    console.log('Overview retrieved savedIds from localStorage:', savedIds);
-    setBookmarkedProperties(savedIds);
-    console.log('Overview set bookmarkedProperties to:', savedIds);
+    await fetchSavedPropertyIds();
   };
 
   // Handle bookmark toggle
-  const handleBookmark = (propertyId) => {
+  const handleBookmark = async (propertyId) => {
     console.log('Overview handleBookmark called with propertyId:', propertyId);
-    console.log('Overview current bookmarkedProperties:', bookmarkedProperties);
+    console.log('Overview current savedPropertyIds:', savedPropertyIds);
     
-    const isCurrentlySaved = bookmarkedProperties.includes(propertyId);
-    let updatedIds;
+    const isCurrentlySaved = savedPropertyIds.includes(propertyId);
     
-    if (isCurrentlySaved) {
-      updatedIds = bookmarkedProperties.filter(id => id !== propertyId);
-      console.log('Overview removing bookmark, updatedIds:', updatedIds);
-    } else {
-      updatedIds = [...bookmarkedProperties, propertyId];
-      console.log('Overview adding bookmark, updatedIds:', updatedIds);
+    try {
+      if (isCurrentlySaved) {
+        await savedPropertiesAPI.removeSavedProperty(propertyId);
+        console.log('Overview removing bookmark');
+      } else {
+        await savedPropertiesAPI.saveProperty(propertyId);
+        console.log('Overview adding bookmark');
+      }
+      
+      // Refresh saved properties after toggle
+      await fetchSavedProperties();
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
     }
-    
-    setBookmarkedProperties(updatedIds);
-    saveSavedPropertyIds(updatedIds);
-    
-    // Verify localStorage was updated
-    const savedInStorage = localStorage.getItem('savedProperties');
-    console.log('Overview saved to localStorage:', savedInStorage);
   };
 
   useEffect(() => {
     fetchProperties();
     fetchSavedProperties();
-  }, []);
+  }, [user]);
 
 
 
@@ -117,7 +128,7 @@ const Overview = () => {
         <div className="relative">
           <PropertyCard 
             property={property} 
-            bookmarkedProperties={bookmarkedProperties}
+            bookmarkedProperties={savedPropertyIds}
             toggleBookmark={toggleBookmark}
             onViewDetails={() => handleViewDetails(property)} // Uses static routing
             showBookmarkButton={showBookmarkButton}
@@ -135,12 +146,12 @@ const Overview = () => {
 
   const featuredProperties = properties.filter(property => property.isFeatured);
   const bookmarkedPropertiesList = properties.filter(property =>
-    bookmarkedProperties.includes(property.id)
+    savedPropertyIds.includes(property.id)
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <DashboardHeader currentPage="overview" bookmarkedCount={bookmarkedProperties.length} />
+      <DashboardHeader currentPage="overview" bookmarkedCount={savedPropertyIds.length} />
       
       {/* Hero Section */}
       <section className="relative pt-28 pb-20 overflow-hidden">
@@ -300,7 +311,7 @@ const Overview = () => {
           </div>
 
           {/* Saved Properties Section */}
-          {bookmarkedProperties.length > 0 && (
+          {savedPropertyIds.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -332,7 +343,7 @@ const Overview = () => {
             </div>
           )}
 
-          {bookmarkedProperties.length === 0 && (
+          {savedPropertyIds.length === 0 && (
             <div className="bg-white rounded-3xl p-12 text-center shadow-lg">
               <div className="w-24 h-24 bg-gradient-to-r from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Bookmark className="w-12 h-12 text-amber-600" />
