@@ -8,7 +8,8 @@ import {
   Menu, 
   X,
   ChevronDown,
-  Calendar
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -145,6 +146,17 @@ const AdminHeader = ({ currentPage }) => {
               <Calendar className="w-4 h-4 mr-2" />
               Orders
             </Link>
+            <Link
+              to="/admin/comments"
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive('/admin/comments')
+                  ? 'bg-orange-100 text-orange-700' 
+                  : 'text-gray-600 hover:text-orange-600'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Comments
+            </Link>
           </nav>
 
           {/* Admin Profile with Hover Dropdown */}
@@ -253,6 +265,18 @@ const AdminHeader = ({ currentPage }) => {
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 Orders
+              </Link>
+              <Link
+                to="/admin/comments"
+                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium ${
+                  isActive('/admin/comments')
+                    ? 'bg-orange-100 text-orange-700' 
+                    : 'text-gray-600'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Comments
               </Link>
               
               {/* Mobile Profile Options - Simplified */}

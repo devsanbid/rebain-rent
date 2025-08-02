@@ -22,6 +22,7 @@ import propertyRoutes from './routes/properties.js';
 import bookingRoutes from './routes/bookings.js';
 import savedPropertyRoutes from './routes/savedProperties.js';
 import reviewRoutes from './routes/reviews.js';
+import commentRoutes from './routes/comments.js';
 import adminRoutes from './routes/admin.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -67,6 +68,7 @@ app.use('/api/properties', propertyRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/saved-properties', savedPropertyRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);
 
 // 404 handler

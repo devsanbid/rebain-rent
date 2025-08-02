@@ -133,6 +133,13 @@ export const validateId = [
   handleValidationErrors
 ];
 
+export const validatePropertyId = [
+  param('propertyId')
+    .isInt({ min: 1 })
+    .withMessage('Valid property ID is required'),
+  handleValidationErrors
+];
+
 export const validatePagination = [
   query('page')
     .optional()

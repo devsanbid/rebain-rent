@@ -22,6 +22,7 @@ import UserViewDetails from './Admin/Components/UserViewDetails';
 import BookingPage from './User/Pages/BookingPage';
 import OrderHistory from './User/Pages/OrderHistory';
 import AdminOrders from './Admin/Pages/AdminOrders';
+import AdminComments from './Admin/Pages/AdminComments';
 
 function App() {
   return (
@@ -105,6 +106,11 @@ function App() {
           <Route path="/admin/orders" element={
             <ProtectedRoute adminOnly={true}>
               <AdminOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/comments" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminComments />
             </ProtectedRoute>
           } />
         </Routes>

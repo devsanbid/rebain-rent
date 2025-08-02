@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   X, 
   MapPin, 
@@ -13,7 +13,8 @@ import {
   User,
   ArrowLeft
 } from 'lucide-react';
-import { IMAGE_BASE_URL } from '../../services/api';
+import { IMAGE_BASE_URL, commentsAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PropertyDetails = ({ 
   property, 
@@ -22,34 +23,53 @@ const PropertyDetails = ({
   bookmarkedProperties, 
   toggleBookmark,
   isFullPage = false,
-  onBooking
+  onBooking 
 }) => {
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      reviewer: "John Smith",
-      comment: "Amazing property with stunning ocean views! The host was very responsive and the place was exactly as described.",
-      date: "2024-01-15"
-    },
-    {
-      id: 2,
-      reviewer: "Emily Chen",
-      comment: "Beautiful location and well-maintained property. The infinity pool was a highlight of our stay.",
-      date: "2024-01-10"
-    },
-    {
-      id: 3,
-      reviewer: "Michael Rodriguez",
-      comment: "Perfect for a long-term stay. Very comfortable and all amenities worked perfectly.",
-      date: "2024-01-05"
-    }
-  ]);
-
+  const { user } = useAuth();
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAddComment, setShowAddComment] = useState(false);
   const [newComment, setNewComment] = useState({
-    reviewerName: '',
     comment: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  const textareaRef = useRef(null);
+
+  const handleCommentChange = useCallback((e) => {
+    const target = e.target;
+    const cursorPosition = target.selectionStart;
+    const scrollTop = target.scrollTop;
+    
+    setNewComment(prev => ({...prev, comment: target.value}));
+    
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
+        textareaRef.current.scrollTop = scrollTop;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (property?.id) {
+      fetchComments();
+    }
+  }, [property?.id]);
+
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      const response = await commentsAPI.getPropertyComments(property.id);
+      if (response.success) {
+        setComments(response.data.comments);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen || !property) return null;
 
@@ -81,25 +101,41 @@ const PropertyDetails = ({
     ]
   };
 
-  const handleSubmitComment = (e) => {
+  const handleSubmitComment = async (e) => {
     e.preventDefault();
     
-    if (newComment.reviewerName.trim() && newComment.comment.trim()) {
-      const comment = {
-        id: reviews.length + 1,
-        reviewer: newComment.reviewerName,
-        comment: newComment.comment,
-        date: new Date().toISOString().split('T')[0]
-      };
+    if (!user) {
+      alert('Please login to add a comment');
+      return;
+    }
 
-      setReviews(prev => [comment, ...prev]);
+    if (newComment.comment.trim()) {
+      const currentScrollPosition = window.pageYOffset;
       
-      // Reset form
-      setNewComment({
-        reviewerName: '',
-        comment: ''
-      });
-      setShowAddComment(false);
+      try {
+        setSubmitting(true);
+        const response = await commentsAPI.createComment({
+          propertyId: property.id,
+          comment: newComment.comment.trim()
+        });
+
+        if (response.success) {
+          await fetchComments();
+          setNewComment({ comment: '' });
+          setShowAddComment(false);
+          
+          setTimeout(() => {
+            window.scrollTo(0, currentScrollPosition);
+          }, 0);
+        } else {
+          alert('Failed to add comment');
+        }
+      } catch (error) {
+        console.error('Error adding comment:', error);
+        alert('Failed to add comment');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -259,54 +295,55 @@ const PropertyDetails = ({
           </div>
         </div>
 
-        {/* Reviews Section - At the bottom, clearly visible */}
+        {/* Comments Section - At the bottom, clearly visible */}
         <div className="mt-12 border-t border-gray-200 pt-8">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-serif font-bold text-slate-900 mb-6">Reviews</h2>
+            <h2 className="text-3xl font-serif font-bold text-slate-900 mb-6">Comments</h2>
             
             {/* Add Comment Button */}
-            <button
-              onClick={() => setShowAddComment(!showAddComment)}
-              className="mb-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              {showAddComment ? 'Cancel' : 'Write a Review'}
-            </button>
+            {user && (
+              <button
+                onClick={() => setShowAddComment(!showAddComment)}
+                className="mb-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              >
+                {showAddComment ? 'Cancel' : 'Write a Comment'}
+              </button>
+            )}
 
             {/* Add Comment Form */}
             {showAddComment && (
               <div className="mb-8 p-6 bg-gray-50 rounded-xl">
-                <h3 className="text-xl font-semibold text-slate-900 mb-4">Share Your Experience</h3>
+                <h3 className="text-xl font-semibold text-slate-900 mb-4">Share Your Thoughts</h3>
                 <form onSubmit={handleSubmitComment} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Your Name</label>
-                    <input
-                      type="text"
-                      value={newComment.reviewerName}
-                      onChange={(e) => setNewComment(prev => ({...prev, reviewerName: e.target.value}))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Enter your name"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Your Review</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Your Comment</label>
                     <textarea
+                      ref={textareaRef}
                       value={newComment.comment}
-                      onChange={(e) => setNewComment(prev => ({...prev, comment: e.target.value}))}
+                      onChange={handleCommentChange}
+                      onBlur={(e) => {
+                        e.preventDefault();
+                      }}
+                      onFocus={(e) => {
+                        e.preventDefault();
+                      }}
                       rows={4}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       placeholder="Share your thoughts about this property..."
                       required
+                      minLength={5}
+                      maxLength={1000}
+                      autoComplete="off"
                     />
                   </div>
 
                   <div className="flex items-center space-x-4">
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                      disabled={submitting}
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Submit Review
+                      {submitting ? 'Submitting...' : 'Submit Comment'}
                     </button>
                     <button
                       type="button"
@@ -320,25 +357,34 @@ const PropertyDetails = ({
               </div>
             )}
 
-            {/* Reviews List */}
+            {/* Comments List */}
             <div className="space-y-6">
-              {reviews.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to share your experience!</p>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading comments...</p>
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  {user ? 'No comments yet. Be the first to share your thoughts!' : 'No comments yet. Login to add a comment!'}
+                </p>
               ) : (
-                reviews.map((review) => (
-                  <div key={review.id} className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                comments.map((comment) => (
+                  <div key={comment.id} className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
                         <User className="w-10 h-10 text-gray-400 bg-gray-100 rounded-full p-2" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-slate-900">{review.reviewer}</h4>
+                          <h4 className="font-semibold text-slate-900">
+                            {comment.user ? `${comment.user.firstName} ${comment.user.lastName}` : 'Anonymous'}
+                          </h4>
                           <span className="text-sm text-gray-500">
-                            {new Date(review.date).toLocaleDateString()}
+                            {new Date(comment.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                        <p className="text-gray-700 leading-relaxed">{comment.comment}</p>
                       </div>
                     </div>
                   </div>

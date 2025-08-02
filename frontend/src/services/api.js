@@ -264,6 +264,29 @@ export const reviewsAPI = {
   },
 };
 
+// Comments API calls
+export const commentsAPI = {
+  // Get property comments
+  getPropertyComments: async (propertyId, page = 1, limit = 10) => {
+    return makeRequest(`/comments/property/${propertyId}?page=${page}&limit=${limit}`);
+  },
+
+  // Create comment
+  createComment: async (commentData) => {
+    return makeRequest('/comments', {
+      method: 'POST',
+      body: JSON.stringify(commentData),
+    });
+  },
+
+  // Delete comment
+  deleteComment: async (id) => {
+    return makeRequest(`/comments/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Admin API calls
 export const adminAPI = {
   // Get dashboard stats
@@ -291,7 +314,25 @@ export const adminAPI = {
 
   // Get booking stats
   getBookingStats: async () => {
-    return makeRequest('/bookings/stats');
+    return makeRequest('/admin/bookings/stats');
+  },
+
+  // Get all comments
+  getAllComments: async (queryParams = '') => {
+    return makeRequest(`/comments?${queryParams}`);
+  },
+
+  // Update comment status
+  updateCommentStatus: async (id, status, adminResponse = '') => {
+    return makeRequest(`/comments/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, adminResponse }),
+    });
+  },
+
+  // Get comment stats
+  getCommentStats: async () => {
+    return makeRequest('/comments/stats');
   },
 
   // Update user status
@@ -316,5 +357,6 @@ export default {
   bookings: bookingsAPI,
   savedProperties: savedPropertiesAPI,
   reviews: reviewsAPI,
+  comments: commentsAPI,
   admin: adminAPI,
 };

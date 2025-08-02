@@ -4,6 +4,7 @@ import Property from './Property.js';
 import Booking from './Booking.js';
 import SavedProperty from './SavedProperty.js';
 import Review from './Review.js';
+import Comment from './Comment.js';
 
 User.hasMany(Booking, {
   foreignKey: 'userId',
@@ -75,6 +76,26 @@ Review.belongsTo(Booking, {
   as: 'booking'
 });
 
+User.hasMany(Comment, {
+  foreignKey: 'userId',
+  as: 'comments'
+});
+
+Comment.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+Property.hasMany(Comment, {
+  foreignKey: 'propertyId',
+  as: 'comments'
+});
+
+Comment.belongsTo(Property, {
+  foreignKey: 'propertyId',
+  as: 'property'
+});
+
 User.belongsToMany(Property, {
   through: SavedProperty,
   foreignKey: 'userId',
@@ -95,7 +116,8 @@ export {
   Property,
   Booking,
   SavedProperty,
-  Review
+  Review,
+  Comment
 };
 
 export default {
@@ -104,5 +126,6 @@ export default {
   Property,
   Booking,
   SavedProperty,
-  Review
+  Review,
+  Comment
 };
